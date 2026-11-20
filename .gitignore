@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+wellness.db
+*.db
+.streamlit/secrets.toml
+.pytest_cache/
+.DS_Store
+.vscode/
+*.log
