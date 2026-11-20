@@ -621,7 +621,10 @@ def my_progress(patient: dict = Depends(auth.patient_only)):
         ("pen", "Reflective", "Write 3 goal notes", notes >= 3),
         ("star", "Consistent", "80%+ completion (min. 5 tasks)", due >= 5 and rate >= 80),
     ]
+    assigned = (db.q("SELECT COUNT(*) AS n FROM a_assign WHERE patient_id=?", (pid,))[0]["n"]
+                + db.q("SELECT COUNT(*) AS n FROM g_assign WHERE patient_id=?", (pid,))[0]["n"])
     return {
+        "assigned_total": assigned,
         "points": submitted * 10 + goals_done * 5,
         "best_streak": best, "streaks": streaks, "completion_rate": rate,
         "badges": [{"icon": i, "name": n, "desc": d, "earned": e} for i, n, d, e in badges],

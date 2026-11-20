@@ -36,6 +36,7 @@ DISCLAIMER = ("AI-generated summary for information only. It is not a medical di
 COMPANION_NOTE = ("The companion is an AI for general wellness support. It is not a doctor or therapist and cannot "
                   "diagnose or treat anything. Your doctor cannot see your chats or journal.")
 MOOD_LABELS = {1: "Very low", 2: "Low", 3: "Okay", 4: "Good", 5: "Great"}
+MOOD_EMOJI = {1: "😞", 2: "😕", 3: "😐", 4: "🙂", 5: "😄"}
 MOOD_COLORS = {1: ("#F8CFCB", "#A8302A"), 2: ("#FFE3B0", "#855A00"), 3: ("#E6F0CE", "#587012"),
                4: ("#8FCB74", "#14400A"), 5: ("#2F4F1E", "#FFFFFF")}
 try:  # optional: browser speech-to-text (Chrome / Edge). Falls back to typing when missing.
@@ -382,6 +383,11 @@ CSS_EXTRA = """
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:#fff;border-radius:26px;padding:14px;box-shadow:var(--shadow);margin-bottom:6px;}
 .cal .h{text-align:center;font-size:.68rem;font-weight:600;color:var(--muted);padding-bottom:2px;}
 .cal .d{aspect-ratio:1/1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;color:#B3C2AC;background:#F4F8F0;}
+.cal .d{position:relative;}
+.cal .d .n{position:absolute;top:4px;left:7px;font-size:.58rem;font-weight:700;opacity:.75;}
+.cal .d .em{font-size:1.25rem;line-height:1;margin-top:5px;}
+[data-testid="stButtonGroup"] button,[data-testid="stButtonGroup"] button *{font-size:1.55rem!important;line-height:1.2;}
+[data-testid="stButtonGroup"] button{padding:6px 4px!important;min-height:52px;}
 .cal .d.today{outline:2px solid #2F4F1E;outline-offset:1px;}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.74rem;color:var(--muted);margin:8px 4px 16px;}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:5px;vertical-align:-1px;}
@@ -570,11 +576,12 @@ def mood_calendar(data: dict):
         if r:
             bg, fg = MOOD_COLORS[r["mood"]]
             tip = MOOD_LABELS[r["mood"]] + (f": {r['note']}" if r["note"] else "")
-            cells += f"<div class='{cls}' style='background:{bg};color:{fg}' title='{esc(tip)}'>{n}</div>"
+            cells += (f"<div class='{cls} logged' style='background:{bg};color:{fg}' title='{esc(tip)}'>"
+                      f"<span class='n'>{n}</span><span class='em'>{MOOD_EMOJI[r['mood']]}</span></div>")
         else:
             cells += f"<div class='{cls}'>{n}</div>"
     md(f"<div class='cal'>{cells}</div>")
-    legend = "".join(f"<span><i style='background:{MOOD_COLORS[k][0]}'></i>{MOOD_LABELS[k]}</span>" for k in range(1, 6))
+    legend = "".join(f"<span><i style='background:{MOOD_COLORS[k][0]}'></i>{MOOD_EMOJI[k]} {MOOD_LABELS[k]}</span>" for k in range(1, 6))
     md(f"<div class='legend'>{legend}</div>")
 
 
@@ -1001,6 +1008,17 @@ def patient_home(user: dict):
     open_goals = [x for x in g["current"] if not x["completed"]]
     todo = len(a["pending"]) + len(open_goals)
 
+    if not pr["assigned_total"]:
+        md("<div class='empty'>Welcome to SERENX. Your doctor has not assigned any assessments or goals yet. "
+           "Your plan, streaks and insights will appear here once they do. Meanwhile, add today's mood in the Wellness tab.</div>")
+        rem = get("/my/reminders")
+        for x in rem["reminders"]:
+            row(x["icon"], x["tone"], x["title"], x["text"])
+        md(f"""<div class='doccard'>{avatar(doc.get('name', 'Doctor'), 56)}<div>
+        <div class='m'>Your doctor</div><div class='t'>{esc(doc.get('name', '-'))}</div>
+        <div class='m'>{esc(doc.get('specialization', ''))}</div></div></div>""")
+        return
+
     progress_card("Completion", pr["completion_rate"],
                   "Share of your assigned tasks completed so far", "trend")
     tiles([("Day streak", pr["best_streak"], "sun", "flame"),
@@ -1146,17 +1164,20 @@ def patient_wellness(user: dict):
 
 def wellness_mood():
     today_mood = get("/my/mood")["today"]
-    labels = list(MOOD_LABELS.values())
-    st.write("How are you feeling today?")
-    pick = st.radio("Mood", labels, index=(today_mood["mood"] - 1) if today_mood else 2,
-                    horizontal=True, key="mood_pick", label_visibility="collapsed")
-    note = st.text_input("Add a short note (optional)", key="mood_note", max_chars=300,
-                         value=(today_mood or {}).get("note", ""))
-    if st.button("Save today's mood", type="primary", key="mood_save"):
-        res = post("/my/mood", {"mood": labels.index(pick) + 1, "note": note},
-                   ok_msg=f"Saved. Today you feel: {pick}.")
-        if res and res["crisis"]:
-            crisis_box(res["help"])
+    saved_mood = today_mood["mood"] if today_mood else None
+    saved_note = (today_mood or {}).get("note", "")
+    st.write("How are you feeling today? Tap an emoji and it is added to your calendar.")
+    pick = st.segmented_control("Mood", options=[1, 2, 3, 4, 5], format_func=lambda k: MOOD_EMOJI[k],
+                                default=saved_mood, key="mood_pick", label_visibility="collapsed")
+    st.caption("   ".join(f"{MOOD_EMOJI[k]} {MOOD_LABELS[k]}" for k in range(1, 6)))
+    note = st.text_input("Add a short note (optional, press Enter to save it)", key="mood_note",
+                         max_chars=300, value=saved_note)
+    if pick and (pick != saved_mood or note != saved_note):
+        res = post("/my/mood", {"mood": pick, "note": note})
+        if res:
+            st.success(f"Added to your calendar: {MOOD_EMOJI[pick]} {MOOD_LABELS[pick]}")
+            if res["crisis"]:
+                crisis_box(res["help"])
     month = month_nav("pm")
     data = get(f"/my/mood?month={month}")
     mood_calendar(data)
