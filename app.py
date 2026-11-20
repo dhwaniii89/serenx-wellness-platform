@@ -392,6 +392,7 @@ CSS_EXTRA = """
 .chat .a{align-self:flex-start;background:#fff;color:var(--ink);box-shadow:var(--shadow);border-bottom-left-radius:6px;}
 .chat .c{background:#FDE3E0;color:#A8302A;}
 .crisis{background:#FDE3E0;color:#A8302A;border-radius:20px;padding:14px 18px;font-size:.92rem;line-height:1.5;margin:8px 0 12px;}
+[data-testid="InputInstructions"]{display:none!important;}
 .jentry .when{font-size:.78rem;color:var(--muted);margin-bottom:4px;}
 """
 
