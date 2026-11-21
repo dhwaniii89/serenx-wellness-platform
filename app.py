@@ -143,6 +143,12 @@ ICONS = {
     "heart": '<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>',
     "shield": '<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
     "send": '<path d="M21 3 3 10l7 3 3 7z"/><path d="m10 13 11-10"/>',
+    "bell": '<path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"/><path d="M10 21h4"/>',
+    "mail": '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 8 8 6 8-6"/>',
+    "lock": '<rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    "arrow": '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    "user": '<circle cx="12" cy="8" r="4"/><path d="M4.5 21c0-4 3.5-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>',
+    "steth": '<path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/>',
     "sparkle": '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17v4M17 19h4"/>',
 }
 
@@ -379,6 +385,34 @@ h1,h2,h3,h4{color:var(--ink);letter-spacing:-.01em;}
 """
 
 
+def _svg_uri(name: str, color: str, size: int = 24) -> str:
+    svg = (f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='{size}' height='{size}' fill='none' stroke='{color}' "
+           f"stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>{ICONS[name]}</svg>")
+    return "url(\"data:image/svg+xml," + quote(svg) + "\")"
+
+
+def _login_css() -> str:
+    out = []
+    for key, name in (("login_email", "mail"), ("login_pw", "lock")):
+        out.append(f".st-key-{key} [data-testid='stTextInputRootElement'] input{{background-image:{_svg_uri(name, '#6E8268', 20)}!important;"
+                   "background-repeat:no-repeat!important;background-position:14px center!important;background-size:20px!important;"
+                   "padding-left:46px!important;}")
+    for i, (name, bg, fg) in enumerate((("steth", "#D9F0E4", "#1F7A55"), ("user", "#DDF3D3", "#3C8A26"), ("alert", "#FDE6DC", "#D9622B"))):
+        out.append(f".st-key-demo_{i} button::before{{background:{_svg_uri(name, fg, 24)} center/24px no-repeat,{bg};}}")
+    return "".join(out)
+
+
+def _hero_photo() -> str:
+    """Optional: put a photo at assets/hero.jpg (or .png) and it fills the bottom of the login hero."""
+    import base64
+    base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+    for fn, mime in (("hero.jpg", "jpeg"), ("hero.jpeg", "jpeg"), ("hero.png", "png"), ("hero.webp", "webp")):
+        p = os.path.join(base, fn)
+        if os.path.exists(p):
+            return f"data:image/{mime};base64," + base64.b64encode(open(p, "rb").read()).decode()
+    return ""
+
+
 CSS_EXTRA = """
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:#fff;border-radius:26px;padding:14px;box-shadow:var(--shadow);margin-bottom:6px;}
 .cal .h{text-align:center;font-size:.68rem;font-weight:600;color:var(--muted);padding-bottom:2px;}
@@ -403,12 +437,120 @@ CSS_EXTRA = """
 """
 
 
+CSS_DASH = """
+/* ===== dashboard components ===== */
+.dash-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 18px;flex-wrap:wrap;}
+.dash-title h1{font-size:2.2rem;font-weight:700;margin:0;padding:0;color:var(--ink);line-height:1.1;}
+.datechip{display:inline-flex;align-items:center;gap:8px;font-weight:500;font-size:.88rem;color:var(--ink);}
+.datechip .ic{color:var(--forest);}
+.dgrid{display:grid;grid-template-columns:200px 180px minmax(0,1fr);grid-template-rows:auto auto;gap:16px;margin-bottom:22px;}
+.dcard{background:#fff;border-radius:26px;padding:20px;box-shadow:var(--shadow);min-width:0;}
+.dcard.donut{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:center;}
+.dcard.s1{grid-column:2;grid-row:1;} .dcard.s2{grid-column:2;grid-row:2;}
+.dcard.an{grid-column:3;grid-row:1 / span 2;}
+.dcard h4{margin:0 0 6px;font-size:1rem;font-weight:600;color:var(--ink);}
+.sv{font-size:2.3rem;font-weight:600;line-height:1.1;color:var(--ink);margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.bdg{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;}
+.bdg.up{background:#DDF3D3;color:#3C8A26;} .bdg.dn{background:#FDE3E0;color:#C23B3B;}
+.dlegend{display:grid;gap:8px;margin-top:12px;width:100%;font-size:.78rem;color:var(--muted);}
+.dlegend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:8px;vertical-align:-1px;}
+.dlegend b{color:var(--ink);font-weight:600;margin-left:4px;}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:22px;align-items:start;}
+.two .h3{font-size:1.3rem;font-weight:600;margin:0 0 12px;color:var(--ink);}
+.evc{background:#fff;border-radius:22px;padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;}
+.evc .main{flex:1;min-width:0;} .evc .t{font-weight:600;font-size:.96rem;line-height:1.3;} .evc .m{font-size:.8rem;color:var(--muted);margin-top:2px;}
+.evc .go{width:34px;height:34px;border-radius:50%;background:#6DB35A;color:#fff;display:grid;place-items:center;flex:none;}
+.evc .go.done{background:#DDF3D3;color:#3C8A26;} .evc .go .ic{width:16px;height:16px;}
+.dtime{font-size:.8rem;font-weight:600;color:var(--ink);min-width:54px;}
+.lrow{display:flex;align-items:center;gap:12px;background:#F3F7F0;border-radius:18px;padding:10px 12px;margin-bottom:10px;}
+.lrow .main{flex:1;min-width:0;} .lrow .t{font-weight:600;font-size:.92rem;} .lrow .m{font-size:.78rem;color:var(--muted);}
+.lrowwrap{background:#fff;border-radius:26px;padding:14px;box-shadow:var(--shadow);}
+.lrowwrap .lrow:last-child{margin-bottom:0;}
+.ringwrap{position:relative;width:170px;height:170px;margin:6px auto 4px;}
+.ringwrap svg{position:absolute;inset:0;}
+.ringav{position:absolute;inset:0;display:grid;place-items:center;}
+.ringcap{text-align:center;color:var(--muted);font-size:.9rem;margin-top:6px;}
+.ringpct{text-align:center;font-size:2.6rem;font-weight:500;line-height:1.1;margin:2px 0 14px;color:var(--ink);}
+.bellrow{display:flex;justify-content:flex-end;}
+.bellwrap{position:relative;width:38px;height:38px;display:grid;place-items:center;color:var(--ink);}
+.bellwrap .ic{width:24px;height:24px;} .bellwrap i{position:absolute;top:2px;right:2px;width:11px;height:11px;border-radius:50%;background:#5CBF3A;border:2px solid #fff;}
+.minichat{margin-top:6px;}
+.minichat .hd{font-weight:600;font-size:1.02rem;margin:6px 0 10px;}
+.st-key-sidepanel{background:#fff;border-radius:32px;padding:20px 20px 16px;box-shadow:var(--shadow);}
+.st-key-sidepanel .stButton>button{width:100%;}
+.st-key-sidepanel [data-testid="stForm"]{padding:0;box-shadow:none;background:transparent;}
+.st-key-sidepanel .chat .b{max-width:92%;font-size:.84rem;padding:9px 13px;}
+.st-key-sidepanel .chat .u{background:#6DB35A;}
+.st-key-sidepanel .chat{margin:4px 0 10px;}
+.st-key-sidepanel [data-testid="stTextInputRootElement"]{border-radius:99px!important;}
+
+/* tabs: selected = dark green pill */
+[data-testid="stTab"][aria-selected="true"]{background:#2F4F1E!important;box-shadow:0 6px 14px rgba(47,79,30,.28);}
+[data-testid="stTab"][aria-selected="true"] p{color:#fff!important;}
+
+/* ===== login screen ===== */
+.authhero .word{font-size:2.9rem;}
+.authhero .logo .ic{width:24px;height:24px;}
+.authhero .logo{border:none;width:auto;height:auto;border-radius:0;}
+.welcome{text-align:center;margin:2px 0 14px;}
+.welcome h2{font-size:1.9rem;font-weight:700;margin:0;color:var(--forest);}
+.welcome p{margin:4px 0 0;color:var(--muted);font-size:.98rem;}
+.stApp:not(:has(.st-key-navbar)) .block-container{max-width:1120px;}
+.divline{display:flex;align-items:center;gap:14px;margin:22px 0 14px;font-weight:600;font-size:1.05rem;color:var(--forest);}
+.divline::before,.divline::after{content:"";height:1px;background:#CFE0C4;flex:1;}
+[class*="st-key-demo_"] button{width:100%;min-height:118px;border-radius:24px!important;background:#fff!important;border:none!important;
+ box-shadow:var(--shadow);flex-direction:column;gap:6px;color:var(--forest)!important;padding:16px 10px 12px!important;}
+[class*="st-key-demo_"] button::before{content:"";width:50px;height:50px;border-radius:50%;display:block;margin:0 auto 4px;}
+[class*="st-key-demo_"] button p{font-size:.82rem;line-height:1.3;margin:0;color:var(--muted);text-align:center;}
+[class*="st-key-demo_"] button p strong{display:block;font-size:.95rem;color:var(--forest);font-weight:700;}
+[class*="st-key-demo_"] button:hover{box-shadow:0 12px 26px rgba(47,79,30,.2);transform:translateY(-1px);}
+.st-key-loginbtn button::after{content:"";display:inline-block;width:18px;height:18px;margin-left:10px;background:#fff;
+ -webkit-mask:var(--ico-arrow) center/contain no-repeat;mask:var(--ico-arrow) center/contain no-repeat;}
+[data-testid="stFormSubmitButton"],[data-testid="stFormSubmitButton"]>button,.st-key-loginbtn,.st-key-loginbtn button{width:100%!important;}
+.dcard.an svg{max-height:240px;}
+
+/* ===== desktop shell: green sidebar (>=1024px) ===== */
+@media (min-width:1024px){
+ .stApp:has(.st-key-navbar){background:#F3F7F1!important;}
+ .stApp:has(.st-key-navbar) .block-container{max-width:1380px;padding-left:132px;padding-right:2.2rem;padding-bottom:3rem;}
+ .st-key-navbar{left:0!important;top:0;bottom:0;transform:none!important;width:100px!important;max-width:none;border-radius:0 34px 34px 0;
+  background:linear-gradient(180deg,#8CC47D 0%,#76B36A 100%);padding:104px 8px 24px;box-shadow:none;
+  display:flex;align-items:flex-start;justify-content:center;}
+ .st-key-navbar::before{content:"";position:absolute;top:30px;left:50%;margin-left:-19px;width:38px;height:38px;background:#fff;
+  -webkit-mask:var(--ico-leaf) center/contain no-repeat;mask:var(--ico-leaf) center/contain no-repeat;}
+ .st-key-navbar [data-testid="stRadioGroup"]{flex-direction:column!important;gap:10px!important;align-items:center;}
+ .st-key-navbar [data-testid="stRadioOption"]{min-width:78px;width:78px;padding:8px 0 6px;}
+ .st-key-navbar [data-testid="stRadioOption"]::before{width:52px;height:44px;border-radius:16px;}
+ .st-key-navbar [data-testid="stRadioOption"]::after{top:19px;background:rgba(255,255,255,.92);}
+ .st-key-navbar [data-testid="stRadioOption"] p{color:rgba(255,255,255,.95);font-size:.66rem!important;}
+ .st-key-navbar [data-testid="stRadioOption"][data-selected="true"]::before{background:#fff;}
+ .st-key-navbar [data-testid="stRadioOption"][data-selected="true"]::after{background:#2F6B22;}
+ .st-key-navbar [data-testid="stRadioOption"][data-selected="true"] p{color:#fff;}
+}
+@media (max-width:1180px){
+ .st-key-homegrid [data-testid="stHorizontalBlock"]{flex-direction:column;}
+ .st-key-homegrid [data-testid="stColumn"]{width:100%!important;flex:1 1 100%!important;min-width:0!important;}
+ .dgrid{grid-template-columns:200px minmax(0,1fr);}
+ .dcard.an{grid-column:1 / span 2;grid-row:3;}
+ .dcard.s1{grid-column:2;grid-row:1;} .dcard.s2{grid-column:2;grid-row:2;}
+}
+@media (max-width:900px){ .two{grid-template-columns:1fr;} }
+@media (max-width:640px){
+ .dash-title h1{font-size:1.7rem;}
+ .dgrid{grid-template-columns:1fr 1fr;gap:12px;} .dcard{padding:16px;border-radius:22px;}
+ .dcard.donut{grid-column:1;grid-row:1 / span 2;} .sv{font-size:1.8rem;}
+ .welcome h2{font-size:1.6rem;}
+ .authhero .word{font-size:2.2rem;}
+}
+"""
+
+
 def inject_css(nav_icons: list[str] | None = None):
     nav = ""
     for i, name in enumerate(nav_icons or [], 1):
         nav += (f".st-key-navbar [data-testid='stRadioGroup'] > div:nth-child({i}) "
                 f"[data-testid='stRadioOption']{{--m:var(--ico-{name});}}")
-    css = (CSS + CSS_EXTRA).replace("__WAVEL__", _waves(.2)).replace("__WAVE__", _waves()).replace("__FOREST__", f'url("{_forest()}")')
+    css = (CSS + CSS_EXTRA + CSS_DASH + _login_css()).replace("__WAVEL__", _waves(.2)).replace("__WAVE__", _waves()).replace("__FOREST__", f'url("{_forest()}")')
     st.markdown(f"<style>{_icon_css()}{_tone_css()}{css}{nav}</style>", unsafe_allow_html=True)
 
 
@@ -540,6 +682,96 @@ def badge_grid(badges: list[dict]):
     md(f"<div class='badges'>{cards}</div>")
 
 
+def goto(page: str):
+    """Button callback: jump to another page of the navigation bar."""
+    st.session_state["nav"] = page
+
+
+def dash_title(title: str = "Dashboard"):
+    md(f"<div class='dash-title'><h1>{esc(title)}</h1>"
+       f"<div class='datechip'>{icon('calendar')}{date.today().strftime('%A, %d.%m.%Y')}</div></div>")
+
+
+def donut(pct, big, small: str, legend: list[tuple], uid: str = "dn") -> str:
+    import math
+    r = 58
+    c = 2 * math.pi * r
+    dash = c * max(0, min(100, pct or 0)) / 100
+    svg = (f"<svg viewBox='0 0 150 150' width='150' height='150'><circle cx='75' cy='75' r='{r}' fill='none' stroke='#CFEAC4' stroke-width='15'/>"
+           f"<circle cx='75' cy='75' r='{r}' fill='none' stroke='#6DB35A' stroke-width='15' stroke-linecap='round' "
+           f"stroke-dasharray='{dash:.1f} {c:.1f}' transform='rotate(-90 75 75)'/>"
+           f"<text x='75' y='76' text-anchor='middle' font-size='27' font-weight='600' fill='#1B3318'>{esc(big)}</text>"
+           f"<text x='75' y='95' text-anchor='middle' font-size='11' fill='#6E8268'>{esc(small)}</text></svg>")
+    leg = "".join(f"<div><i style='background:{col}'></i>{esc(lbl)}<b>{esc(val)}</b></div>" for lbl, val, col in legend)
+    return f"<div class='dcard donut'>{svg}<div class='dlegend'>{leg}</div></div>"
+
+
+def stat_card(cls: str, label: str, value, badge: str = "", tone: str = "up") -> str:
+    b = f"<span class='bdg {tone}'>{esc(badge)}</span>" if badge else ""
+    return f"<div class='dcard {cls}'><h4>{esc(label)}</h4><div class='sv'>{esc(value)}{b}</div></div>"
+
+
+def line_chart(title: str, labels: list[str], values: list, uid: str = "lc", ymin: int = 1, ymax: int = 5,
+               sub: str = "Mood, 1 to 5") -> str:
+    W, H, L, R, T, B = 400, 200, 30, 14, 40, 28
+    n = len(labels)
+    pts = [(i, v) for i, v in enumerate(values) if v is not None]
+    head = f"<h4>{esc(title)}</h4><div style='font-size:.78rem;color:#6E8268;margin-top:-2px'>{esc(sub)}</div>"
+    if len(pts) < 2:
+        return (f"<div class='dcard an'>{head}<div style='color:#6E8268;font-size:.9rem;padding:46px 8px;text-align:center'>"
+                "Not enough mood entries yet. Add a mood on 2 different days to see the trend.</div></div>")
+    X = lambda i: L + (W - L - R) * (i / (n - 1 if n > 1 else 1))
+    Y = lambda v: T + (H - T - B) * (1 - (v - ymin) / (ymax - ymin))
+    grid = "".join(
+        f"<line x1='{L}' x2='{W - R}' y1='{Y(t):.1f}' y2='{Y(t):.1f}' stroke='#DCE8D4' stroke-dasharray='4 4'/>"
+        f"<text x='{L - 8}' y='{Y(t) + 4:.1f}' text-anchor='end' font-size='10' fill='#9BB092'>{t}</text>"
+        for t in range(ymin, ymax + 1))
+    xl = "".join(f"<text x='{X(i):.1f}' y='{H - 8}' text-anchor='middle' font-size='10' fill='#9BB092'>{esc(l)}</text>"
+                 for i, l in enumerate(labels))
+    d = f"M{X(pts[0][0]):.1f},{Y(pts[0][1]):.1f}"
+    for (i0, v0), (i1, v1) in zip(pts, pts[1:]):
+        cx = (X(i0) + X(i1)) / 2
+        d += f" C{cx:.1f},{Y(v0):.1f} {cx:.1f},{Y(v1):.1f} {X(i1):.1f},{Y(v1):.1f}"
+    area = d + f" L{X(pts[-1][0]):.1f},{Y(ymin):.1f} L{X(pts[0][0]):.1f},{Y(ymin):.1f} Z"
+    bi, bv = max(pts, key=lambda p: p[1])
+    bx, by = X(bi), Y(bv)
+    tx = min(max(bx - 22, L), W - R - 44)
+    svg = (f"<svg viewBox='0 0 {W} {H}' width='100%' role='img' aria-label='{esc(title)}'>"
+           f"<defs><linearGradient id='{uid}' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#6DB35A' stop-opacity='.28'/>"
+           f"<stop offset='1' stop-color='#6DB35A' stop-opacity='0'/></linearGradient></defs>{grid}{xl}"
+           f"<path d='{area}' fill='url(#{uid})'/><path d='{d}' fill='none' stroke='#6DB35A' stroke-width='2.2' stroke-linecap='round'/>"
+           f"<rect x='{tx:.1f}' y='{by - 34:.1f}' width='44' height='22' rx='8' fill='#35385A'/>"
+           f"<text x='{tx + 22:.1f}' y='{by - 19:.1f}' text-anchor='middle' font-size='11' fill='#fff'>{bv:.1f}</text>"
+           f"<circle cx='{bx:.1f}' cy='{by:.1f}' r='5' fill='#fff' stroke='#6DB35A' stroke-width='2.5'/></svg>")
+    return f"<div class='dcard an'>{head}{svg}</div>"
+
+
+def profile_ring(name: str, pct) -> str:
+    import math
+    r = 74
+    c = 2 * math.pi * r
+    dash = c * max(0, min(100, pct or 0)) / 100
+    svg = (f"<svg viewBox='0 0 170 170' width='170' height='170'><circle cx='85' cy='85' r='{r}' fill='none' stroke='#D7ECCD' "
+           f"stroke-width='5' stroke-dasharray='5 9' stroke-linecap='round'/>"
+           f"<circle cx='85' cy='85' r='{r}' fill='none' stroke='#6DB35A' stroke-width='5' stroke-linecap='round' "
+           f"stroke-dasharray='{dash:.1f} {c:.1f}' transform='rotate(-90 85 85)'/></svg>")
+    return f"<div class='ringwrap'>{svg}<div class='ringav'>{avatar(name, 112)}</div></div>"
+
+
+def bell(n: int) -> str:
+    dot = "<i></i>" if n else ""
+    return f"<div class='bellrow'><div class='bellwrap' title='{n} notification(s)'>{icon('bell')}{dot}</div></div>"
+
+
+def plan_cards(items: list[tuple]) -> str:
+    out = ""
+    for title, meta, done in items:
+        go = f"<span class='go done'>{icon('check')}</span>" if done else f"<span class='go'>{icon('arrow')}</span>"
+        out += f"<div class='evc'><div class='main'><div class='t'>{esc(title)}</div><div class='m'>{esc(meta)}</div></div>{go}</div>"
+    return out
+
+
+
 def crisis_box(text: str):
     md(f"<div class='crisis'>{esc(text)}</div>")
 
@@ -619,8 +851,11 @@ def auth_page():
     left, right = st.columns([5, 6], gap="large")
 
     with left:
-        md(f"""<div class='authhero'>
-        <span class='logo'>{icon('leaf')}</span>
+        photo = _hero_photo()
+        style = (f" style=\"background:linear-gradient(180deg,#245A26 0%,rgba(20,50,26,.55) 46%,rgba(10,31,15,.15) 100%),"
+                 f"url('{photo}') center bottom/cover no-repeat,#14321A\"") if photo else ""
+        md(f"""<div class='authhero'{style}>
+        <span class='logo'>{icon('heart')}</span>
         <div class='word'>SERENX</div>
         <h1>{esc(TAGLINE)}</h1>
         <p>{esc(SUBLINE)}</p>
@@ -633,10 +868,13 @@ def auth_page():
         tab_login, tab_pat, tab_doc = st.tabs(["Log in", "Register as patient", "Register as doctor"])
 
         with tab_login:
+            md("<div class='welcome'><h2>Welcome back</h2><p>Continue your wellness journey</p></div>")
             with st.form("login"):
-                email = st.text_input("Email")
-                pw = st.text_input("Password", type="password")
-                if st.form_submit_button("Log in", type="primary"):
+                email = st.text_input("Email", key="login_email", placeholder="Enter your email address")
+                pw = st.text_input("Password", type="password", key="login_pw", placeholder="Enter your password")
+                with st.container(key="loginbtn"):
+                    go = st.form_submit_button("Log in", type="primary")
+                if go:
                     try:
                         res = api("POST", "/login", json={"email": email, "password": pw})
                         st.session_state.token, st.session_state.user = res["token"], res["user"]
@@ -694,12 +932,22 @@ def auth_page():
                     except ApiError as e:
                         st.error(str(e))
 
-        section("Demo accounts", "dummy data only")
-        for who, mail, pw in (("Doctor", "dr.meera@demo.com", "Doctor@123"),
-                              ("Patient, doing well", "riya@demo.com", "Patient@123"),
-                              ("Patient, needs attention", "kabir@demo.com", "Patient@123")):
-            md(f"<div class='demo'>{avatar('Meera Shah' if who == 'Doctor' else who.replace('Patient, ', ''), 36)}"
-               f"<div><b>{esc(who)}</b><span class='m'>{esc(mail)}  /  {esc(pw)}</span></div></div>")
+        md("<div class='divline'>Demo accounts</div>")
+        cols = st.columns(3)
+        demos = (("Doctor", "Access your dashboard", "dr.meera@demo.com", "Doctor@123"),
+                 ("Patient", "Doing well, view progress", "riya@demo.com", "Patient@123"),
+                 ("Patient", "Needs attention, check status", "kabir@demo.com", "Patient@123"))
+        for i, (col, (who, sub, mail, dpw)) in enumerate(zip(cols, demos)):
+            with col:
+                with st.container(key=f"demo_{i}"):
+                    if st.button(f"**{who}**  \n{sub}", key=f"demo_btn_{i}", width="stretch"):
+                        try:
+                            res = api("POST", "/login", json={"email": mail, "password": dpw})
+                            st.session_state.token, st.session_state.user = res["token"], res["user"]
+                            st.rerun()
+                        except ApiError as e:
+                            st.error(str(e))
+        st.caption("Click a demo account to sign in at once. Dummy data only.")
 
 
 # ================================================================== DOCTOR
@@ -736,33 +984,62 @@ def submission_expander(s: dict, label: str, key: str):
 def doctor_overview():
     user = st.session_state.user
     pts = get("/patients")
-    attention = [p for p in pts if p["needs_attention"]]
-    on_track = round(100 * (len(pts) - len(attention)) / len(pts)) if pts else None
-
-    progress_card("Patients on track", on_track, f"{len(pts) - len(attention)} of {len(pts)} patients are on track today")
-    tiles([("Connected patients", len(pts), "forest", "users"),
-           ("Need attention", len(attention), "coral", "alert"),
-           ("Flagged responses", sum(p["flagged"] for p in pts), "sun", "shield"),
-           ("Pending assessments", sum(p["pending_assessments"] for p in pts), "teal", "clipboard")])
-    if attention:
-        names = ", ".join(p["name"] for p in attention[:3])
-        insight(f"{names} {'needs' if len(attention) == 1 else 'need'} a closer look. Open Patients to review the details.")
-    else:
-        insight("All your patients are on track today. Nice work.")
-
-    section("Needs attention")
-    if not attention:
-        md(f"<div class='okbox'>{icon('check')}Everyone is on track.</div>")
-    for p in attention:
-        reasons = "".join(f"<li>{esc(r)}</li>" for r in p["reasons"])
-        md(f"<div class='alert'>{avatar(p['name'], 42)}<div><div class='t'>{esc(p['name'])}</div><ul>{reasons}</ul></div></div>")
-
-    section("Recent submissions")
+    week = get("/analytics/mood-week")
     subs = get("/submissions?limit=10")
-    if not subs:
-        empty("No submissions yet. They appear here as soon as a patient completes an assessment.")
-    for s in subs:
-        submission_expander(s, f"{s['patient_name']} - {s['title']} - {fmt_date(s['submitted_at'])}", f"ov_rev_{s['id']}")
+    attention = [p for p in pts if p["needs_attention"]]
+    on_track = round(100 * (len(pts) - len(attention)) / len(pts)) if pts else 0
+    rates = [p["completion_rate"] for p in pts if p["completion_rate"] is not None]
+    avg_rate = round(sum(rates) / len(rates)) if rates else 0
+
+    with st.container(key="homegrid"):
+        main, side = st.columns([7, 3], gap="large")
+
+    with main:
+        dash_title("Dashboard")
+        md("<div class='dgrid'>"
+           + donut(on_track, len(pts), "Patients",
+                   [("On track", len(pts) - len(attention), "#6DB35A"), ("Need attention", len(attention), "#E5584F")])
+           + stat_card("s1", "Need attention", len(attention), "review" if attention else "all good", "dn" if attention else "up")
+           + stat_card("s2", "Flagged responses", sum(p["flagged"] for p in pts), "", "dn")
+           + line_chart("Patient mood this week", [w["label"] for w in week], [w["mood"] for w in week], "dw",
+                        sub="Average mood of your patients, 1 to 5")
+           + "</div>")
+        if attention:
+            names = ", ".join(p["name"] for p in attention[:3])
+            insight(f"{names} {'needs' if len(attention) == 1 else 'need'} a closer look. Open Patients to review the details.")
+        else:
+            insight("All your patients are on track today. Nice work.")
+
+        att_html = "".join(
+            f"<div class='lrow'>{avatar(p['name'], 38)}<div class='main'><div class='t'>{esc(p['name'])}</div>"
+            f"<div class='m'>{esc(' | '.join(p['reasons']))}</div></div></div>" for p in attention
+        ) or f"<div class='okbox'>{icon('check')}Everyone is on track.</div>"
+        pat_html = "".join(
+            f"<div class='lrow'>{avatar(p['name'], 38)}<div class='main'><div class='t'>{esc(p['name'])}</div>"
+            f"<div class='m'>{p['pending_assessments']} pending | {p['open_goals']} open goals</div></div>"
+            f"{pill('Needs attention', 'coral') if p['needs_attention'] else pill('On track', 'leaf')}</div>" for p in pts
+        ) or "<div class='empty'>No patients connected yet.</div>"
+        md(f"<div class='two'><div><div class='h3'>Needs attention</div><div class='lrowwrap'>{att_html}</div></div>"
+           f"<div><div class='h3'>Your patients</div><div class='lrowwrap'>{pat_html}</div></div></div>")
+
+        section("Recent submissions")
+        if not subs:
+            empty("No submissions yet. They appear here as soon as a patient completes an assessment.")
+        for s_ in subs:
+            submission_expander(s_, f"{s_['patient_name']} - {s_['title']} - {fmt_date(s_['submitted_at'])}", f"ov_rev_{s_['id']}")
+
+    with side:
+        with st.container(key="sidepanel"):
+            md(bell(len(attention)))
+            md(profile_ring(user["name"], avg_rate))
+            md(f"<div class='ringcap'>Average patient completion</div><div class='ringpct'>{avg_rate}%</div>")
+            st.button("All patients", key="side_all", on_click=goto, args=("Patients",), width="stretch")
+            md("<div class='minichat'><div class='hd'>Latest submissions</div></div>")
+            latest = "".join(
+                f"<div class='lrow'>{avatar(x['patient_name'], 34)}<div class='main'><div class='t'>{esc(x['patient_name'])}</div>"
+                f"<div class='m'>{esc(x['title'])}</div></div></div>" for x in subs[:4]
+            ) or "<div class='m' style='color:#6E8268'>Nothing yet.</div>"
+            md(latest)
 
 
 def doctor_patients():
@@ -1000,69 +1277,92 @@ def patient_app(user: dict):
      "Goals": patient_goals, "Wellness": patient_wellness, "Progress": patient_progress}[page](user)
 
 
+def side_panel_patient(user: dict, pct, nrem: int):
+    with st.container(key="sidepanel"):
+        md(bell(nrem))
+        md(profile_ring(user["name"], pct))
+        md(f"<div class='ringcap'>Your completion</div><div class='ringpct'>{pct or 0}%</div>")
+        st.button("All activity", key="side_all", on_click=goto, args=("Progress",), width="stretch")
+        md("<div class='minichat'><div class='hd'>Wellness companion</div></div>")
+        hist = get("/my/companion")["messages"][-2:]
+        if hist:
+            md("<div class='chat'>" + "".join(
+                f"<div class='b {'u' if m['role'] == 'user' else 'a'}'>{esc(m['content'][:220])}</div>" for m in hist) + "</div>")
+        else:
+            md("<div class='chat'><div class='b a'>Hi! How are you feeling today?</div></div>")
+        with st.form("side_chat", clear_on_submit=True):
+            msg = st.text_input("Your message", key="side_chat_in", placeholder="Your message ...", label_visibility="collapsed")
+            if st.form_submit_button("Send") and msg.strip():
+                post("/my/companion", {"message": msg})
+                st.rerun()
+        st.caption("AI for general wellness support, not medical advice.")
+
+
 def patient_home(user: dict):
     if st.session_state.pop("just_registered", False):
         st.success(f"You are now connected to {user['doctor']['name']}. Your doctor can already see you on their dashboard.")
     doc = user.get("doctor") or {}
     a, g, pr = get("/my/assessments"), get("/my/goals"), get("/my/progress")
+    rem, week = get("/my/reminders"), get("/my/mood/week")
     open_goals = [x for x in g["current"] if not x["completed"]]
     todo = len(a["pending"]) + len(open_goals)
 
-    if not pr["assigned_total"]:
-        md("<div class='empty'>Welcome to SERENX. Your doctor has not assigned any assessments or goals yet. "
-           "Your plan, streaks and insights will appear here once they do. Meanwhile, add today's mood in the Wellness tab.</div>")
-        rem = get("/my/reminders")
-        for x in rem["reminders"]:
-            row(x["icon"], x["tone"], x["title"], x["text"])
-        md(f"""<div class='doccard'>{avatar(doc.get('name', 'Doctor'), 56)}<div>
-        <div class='m'>Your doctor</div><div class='t'>{esc(doc.get('name', '-'))}</div>
-        <div class='m'>{esc(doc.get('specialization', ''))}</div></div></div>""")
-        return
+    with st.container(key="homegrid"):
+        main, side = st.columns([7, 3], gap="large")
 
-    progress_card("Completion", pr["completion_rate"],
-                  "Share of your assigned tasks completed so far", "trend")
-    tiles([("Day streak", pr["best_streak"], "sun", "flame"),
-           ("Points", pr["points"], "lime", "star"),
-           ("Pending assessments", len(a["pending"]), "forest", "clipboard"),
-           ("Goals to do", len(open_goals), "leaf", "target")])
+    with main:
+        dash_title("Dashboard")
+        doc_card = (f"<div class='doccard'>{avatar(doc.get('name', 'Doctor'), 56)}<div>"
+                    f"<div class='m'>Your doctor</div><div class='t'>{esc(doc.get('name', '-'))}</div>"
+                    f"<div class='m'>{esc(doc.get('specialization', ''))}</div></div></div>")
+        if not pr["assigned_total"]:
+            md("<div class='empty'>Welcome to SERENX. Your doctor has not assigned any assessments or goals yet. "
+               "Your plan, streaks and insights will appear here once they do. Meanwhile, add today's mood in the Wellness tab.</div>")
+            md(line_chart("Mood this week", [w["label"] for w in week], [w["mood"] for w in week], "pw"))
+            for x in rem["reminders"]:
+                row(x["icon"], x["tone"], x["title"], x["text"])
+            md(doc_card)
+        else:
+            rate = pr["completion_rate"]
+            md("<div class='dgrid'>"
+               + donut(rate, f"{rate}%", "Completion",
+                       [("Assessments due", len(a["pending"]), "#6DB35A"), ("Goals to do", len(open_goals), "#CFEAC4")])
+               + stat_card("s1", "Day streak", pr["best_streak"], "keep going" if pr["best_streak"] else "", "up")
+               + stat_card("s2", "Points", pr["points"])
+               + line_chart("Mood this week", [w["label"] for w in week], [w["mood"] for w in week], "pw")
+               + "</div>")
 
-    if pr["best_streak"] >= 7:
-        tip = f"You are on a {pr['best_streak']} day streak. Keep it up!"
-    elif todo:
-        tip = f"{todo} task(s) left today. A short check-in keeps your streak going."
-    else:
-        tip = "You have finished everything for today. See you tomorrow."
-    insight(tip)
+            if pr["best_streak"] >= 7:
+                tip = f"You are on a {pr['best_streak']} day streak. Keep it up!"
+            elif todo:
+                tip = f"{todo} task(s) left today. A short check-in keeps your streak going."
+            else:
+                tip = "You have finished everything for today. See you tomorrow."
+            insight(tip)
 
-    rem = get("/my/reminders")
-    if rem["count"]:
-        section("Reminders", "worked out when you open the app")
-        for x in rem["reminders"]:
-            row(x["icon"], x["tone"], x["title"], x["text"])
+            if rem["count"]:
+                section("Reminders", "worked out when you open the app")
+                for x in rem["reminders"]:
+                    row(x["icon"], x["tone"], x["title"], x["text"])
 
-    section("Today's plan")
-    plan = [(x["title"], f"{FREQ_LABEL[x['frequency']]} assessment", False) for x in a["pending"]]
-    plan += [(x["title"], "Completed" if x["completed"] else f"{FREQ_LABEL[x['frequency']]} goal, {x['progress']}% done",
-              x["completed"]) for x in g["current"]]
-    if plan:
-        timeline(plan)
-        st.caption("Open the Assessments or Goals page to complete these.")
-    else:
-        empty("Nothing to do today.")
+            plan = [(x["title"], f"{FREQ_LABEL[x['frequency']]} assessment", False) for x in a["pending"]]
+            plan += [(x["title"], "Completed" if x["completed"] else f"{FREQ_LABEL[x['frequency']]} goal, {x['progress']}% done",
+                      x["completed"]) for x in g["current"]]
+            up = sorted(a["upcoming"] + g["upcoming"], key=lambda x: x["due_date"])[:5]
+            plan_html = plan_cards(plan) if plan else "<div class='empty'>Nothing to do today.</div>"
+            up_html = "".join(
+                f"<div class='lrow'><span class='dtime'>{esc(fmt_date(x['due_date'])[:6])}</span>"
+                f"<div class='main'><div class='t'>{esc(x['title'])}</div><div class='m'>{esc(FREQ_LABEL[x['frequency']])}</div></div></div>"
+                for x in up) or "<div class='empty'>Nothing scheduled yet.</div>"
+            md(f"<div class='two'><div><div class='h3'>Today's plan</div>{plan_html}"
+               f"<div class='m' style='color:#6E8268;font-size:.8rem'>Open Assessments or Goals to complete these.</div></div>"
+               f"<div><div class='h3'>Coming up</div><div class='lrowwrap'>{up_html}</div></div></div>")
+            md(doc_card)
+            section("Your badges")
+            badge_grid(pr["badges"])
 
-    md(f"""<div class='doccard'>{avatar(doc.get('name', 'Doctor'), 56)}<div>
-    <div class='m'>Your doctor</div><div class='t'>{esc(doc.get('name', '-'))}</div>
-    <div class='m'>{esc(doc.get('specialization', ''))}</div></div></div>""")
-
-    section("Coming up")
-    up = sorted(a["upcoming"] + g["upcoming"], key=lambda x: x["due_date"])[:5]
-    if not up:
-        empty("Nothing scheduled yet.")
-    for x in up:
-        row("calendar", "teal", x["title"], fmt_date(x["due_date"]), pill(FREQ_LABEL[x["frequency"]], FREQ_TONE[x["frequency"]]))
-
-    section("Your badges")
-    badge_grid(pr["badges"])
+    with side:
+        side_panel_patient(user, pr["completion_rate"], rem["count"])
 
 
 def patient_assessments(user: dict):

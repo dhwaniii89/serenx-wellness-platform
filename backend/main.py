@@ -778,3 +778,30 @@ def my_reminders(patient: dict = Depends(auth.patient_only)):
         out.append({"tone": "coral", "icon": "alert", "title": "A few tasks slipped this week",
                     "text": f"{miss} missed in the last 7 days. Start with one small task today."})
     return {"reminders": out, "count": len(out)}
+
+
+# ---------------------------------------------------------------- dashboard charts
+def _last_7_days() -> list[date]:
+    t = _today()
+    return [t - timedelta(days=i) for i in range(6, -1, -1)]
+
+
+@app.get("/my/mood/week")
+def my_mood_week(patient: dict = Depends(auth.patient_only)):
+    days = _last_7_days()
+    rows = {r["day"]: r["mood"] for r in db.q(
+        "SELECT day, mood FROM mood_log WHERE user_id=? AND day>=?", (patient["id"], days[0].isoformat()))}
+    return [{"day": d.isoformat(), "label": d.strftime("%a"), "mood": rows.get(d.isoformat())} for d in days]
+
+
+@app.get("/analytics/mood-week")
+def mood_week_all(doctor: dict = Depends(auth.doctor_only)):
+    """Average mood per day across this doctor's patients (last 7 days)."""
+    days = _last_7_days()
+    rows = db.q(
+        """SELECT m.day, AVG(m.mood) AS avg FROM mood_log m JOIN users u ON u.id = m.user_id
+           WHERE u.doctor_id=? AND m.day>=? GROUP BY m.day""",
+        (doctor["id"], days[0].isoformat()),
+    )
+    by = {r["day"]: round(r["avg"], 2) for r in rows}
+    return [{"day": d.isoformat(), "label": d.strftime("%a"), "mood": by.get(d.isoformat())} for d in days]
